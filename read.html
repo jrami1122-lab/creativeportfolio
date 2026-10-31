@@ -33,10 +33,10 @@ function renderReading(source,key,target){
  target.replaceChildren();
  if(key!=='ouija'&&key!=='wela'){
    const pre=document.createElement('pre');pre.className='manuscript-poetry';
-   let poem=source.split('\\n').map(line=>line.trimEnd()).join('\\n').trim();
-   const firstLine=poem.split('\\n')[0].trim();
+   let poem=source.split('\n').map(line=>line.trimEnd()).join('\n').trim();
+   const firstLine=poem.split('\n')[0].trim();
    const titleLine={ark:'Into the Ark',astral:'Astral Dreams',noah:'Noah’s Ark- The Poem',heaven:'Heaven II'}[key];
-   if(titleLine&&firstLine===titleLine)poem=poem.slice(poem.indexOf('\\n')+1).trim();
+   if(titleLine&&firstLine===titleLine)poem=poem.slice(poem.indexOf('\n')+1).trim();
    pre.textContent=poem;
    target.append(pre);return;
  }
