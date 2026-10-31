@@ -24,7 +24,7 @@ function proseParagraphs(source, dropTitle=true){
  return blocks.flatMap(lines=>{
    const joined=lines.join(' ').replace(/\s+([,.;!?])/g,'$1').trim();
    if(!joined)return [];
-   return [{text:joined,kind:/^[—–-]\s*One Week Later/i.test(joined)?'scene-break':
+   return [{text:joined,kind:/^(?:[—–-]\s*)?One Week Later(?:\s*[—–-])?$/i.test(joined)?'scene-break':
       /^\*.*\*$/.test(joined)?'stage-direction':
       /^(?:[“"‘']|Ghost:|Anthony:|David:|Manny:|Josh:|Harry:|Carmelo:|Rich:|Richard:)/.test(joined)?'dialogue':''}];
  });
