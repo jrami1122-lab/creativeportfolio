@@ -1,0 +1,61 @@
+name: Extract original gallery artwork
+on:
+  push:
+    paths:
+      - '.github/workflows/extract-gallery.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract existing embedded artworks as standalone assets
+        run: |
+          python3 - <<'PY'
+          from html.parser import HTMLParser
+          from pathlib import Path
+          import base64,re
+          class ImageParser(HTMLParser):
+              def __init__(self): super().__init__(); self.images=[]
+              def handle_starttag(self,tag,attrs):
+                  if tag=='img':
+                      d=dict(attrs)
+                      if d.get('src','').startswith('data:image/'):
+                          self.images.append((d.get('alt',''),d['src']))
+          src=Path('original-portfolio.html').read_text(encoding='utf-8')
+          parser=ImageParser();parser.feed(src)
+          candidates=[
+              ('ascension-art','Part 1 illustrated poem'),
+              ('fall-art','Part 2 illustrated poem'),
+              ('flip-cars-art','Graphic title card depicting a racetrack'),
+              ('battleboard-art','Battleboard modular board game concept spread'),
+              ('pondering-art','Illustration of dancing coquí')
+          ]
+          d=Path('assets');d.mkdir(exist_ok=True)
+          found=[]
+          for name,needle in candidates:
+              matches=[(alt,data) for alt,data in parser.images if needle.lower() in alt.lower()]
+              if not matches:
+                  print('Not found:',name,needle);continue
+              alt,data=matches[0]
+              m=re.match(r'data:image/([^;]+);base64,(.+)',data,re.S)
+              if not m:
+                  print('Invalid data URI for',name);continue
+              ext={'jpeg':'jpg','svg+xml':'svg'}.get(m.group(1),m.group(1))
+              path=d/(name+'.'+ext)
+              path.write_bytes(base64.b64decode(m.group(2)))
+              print('Extracted',path,path.stat().st_size,'bytes')
+              found.append(str(path))
+          if not ('assets/ascension-art.webp' in found and 'assets/fall-art.webp' in found):
+              raise SystemExit('Missing crucial Ascension/Fall artwork: '+str(found))
+          PY
+      - name: Publish extracted assets
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/
+          if git diff --cached --quiet; then echo "Assets already up to date"; exit 0; fi
+          git commit -m "Extract original illustrations into directly hosted gallery assets"
+          git push
